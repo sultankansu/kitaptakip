@@ -64,7 +64,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 RUN useradd --create-home --uid 10001 kitaptakipappuser && chown -R kitaptakipappuser:kitaptakipappuser /app && sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["gunicorn", "-b", "0.0.0.0:5010", "--workers", "2", "--timeout", "60", "application:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:6116", "--workers", "2", "--timeout", "60", "application:app"]
 ```
 entrypoint.sh:
 ```sh
@@ -81,7 +81,7 @@ services:
     build: .
     container_name: kitaptakip
     restart: unless-stopped
-    ports: ["5010:5010"]
+    ports: ["6116:6116"]
     environment:
       - TZ=Europe/Istanbul
       - SECRET_KEY=degistir-beni
@@ -97,5 +97,5 @@ volumes:
 
 ## Çalışma şekli
 - Önce mimariyi kısaca yaz, onayımı al, sonra kodla.
-- Bitirmeden önce: `.venv` kur, `pytest` çalıştır, uygulamayı açıp "suç ve ceza" arayarak bir kitap ekle. Sonra `docker compose up -d --build` ile container'ı kaldır, http://localhost:5010'da login'i ve aynı aramayı container içinde de dene. Neyi denediğini yaz.
-- README kısa: kurulum ve `docker compose up -d --build` → http://localhost:5010
+- Bitirmeden önce: `.venv` kur, `pytest` çalıştır, uygulamayı açıp "suç ve ceza" arayarak bir kitap ekle. Sonra `docker compose up -d --build` ile container'ı kaldır, http://localhost:6116'da login'i ve aynı aramayı container içinde de dene. Neyi denediğini yaz.
+- README kısa: kurulum ve `docker compose up -d --build` → http://localhost:6116

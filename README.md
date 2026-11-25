@@ -16,4 +16,4 @@ Docker ile çalıştırma:
 docker compose up -d --build
 ```
 
-Uygulama: http://localhost:5010
+Uygulama: http://localhost:6116

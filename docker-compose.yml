@@ -3,7 +3,7 @@ services:
     build: .
     container_name: kitaptakip
     restart: unless-stopped
-    ports: ["5010:5010"]
+    ports: ["6116:6116"]
     environment:
       - TZ=Europe/Istanbul
       - SECRET_KEY=degistir-beni
