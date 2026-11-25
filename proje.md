@@ -20,6 +20,8 @@ Okuduğum kitapları, ilerlememi ve yıllık hedefimi takip eden web uygulaması
 
 ## Özellikler
 - Raflar: Okunacak, Okunuyor, Okundu. İlk sayfa girişinde Okunuyor'a, son sayfada Okundu'ya otomatik geçer ve bitiş tarihi yazılır; elle de değişir.
+- Kitaplar kategoriye atanabilir ve kitaplık kategori butonlarıyla filtrelenebilir.
+- Kitaplık kartından kitap ve ona bağlı okuma kayıtları silinebilir.
 - Kitap kartı: kapak, ad, yazar, ilerleme çubuğu, "Kitapyurdu'nda gör" linki.
 - "Bugün okudum": kalınan sayfa girilir. Son kayıt silinebilir.
 - 1-5 yıldız puan ve kısa not.

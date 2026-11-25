@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3 mb-4">İstatistikler</h1>
+<div class="row g-4">
+  <div class="col-md-4"><div class="card stat-card"><h2 class="h6">Yıllık hedef</h2><div class="display-6">{{ completed }}/{{ goal }}</div><p class="mb-0">{{ status_text }}</p></div></div>
+  <div class="col-md-4"><div class="card stat-card"><h2 class="h6">Okuma serisi</h2><div class="display-6">{{ streak }} gün</div></div></div>
+</div>
+<div class="card chart-card mt-4">
+  <h2 class="h6">Aylık okunan sayfa</h2>
+  <canvas id="monthlyChart"></canvas>
+</div>
+<script>
+const chartLabels = {{ monthly | map(attribute='month') | list | tojson }};
+const chartValues = {{ monthly | map(attribute='pages') | list | tojson }};
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: {labels: chartLabels, datasets: [{label: 'Sayfa', data: chartValues, backgroundColor: '#EC691F'}]}
+});
+</script>
+{% endblock %}
