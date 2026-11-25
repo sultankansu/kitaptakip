@@ -28,7 +28,7 @@ def search_books(query):
     except requests.RequestException:
         return {"error": "unavailable", "results": []}
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    soup = BeautifulSoup(response.content, "html.parser")
     cards = soup.select(".ky-product")
     results = []
     for card in cards:
@@ -64,7 +64,7 @@ def get_book_details(url):
     except requests.RequestException:
         return None
 
-    soup = BeautifulSoup(response.text, "html.parser")
+    soup = BeautifulSoup(response.content, "html.parser")
     details = {"page_count": None, "isbn": None, "publication_year": None}
     for item in soup.select(".ky-pd-attributes__item"):
         text = item.get_text(" ", strip=True)

@@ -34,6 +34,7 @@ def init_db():
             publication_year INTEGER,
             status TEXT NOT NULL CHECK (status IN ('want', 'reading', 'finished')),
             category TEXT NOT NULL DEFAULT 'Genel',
+            summary TEXT NOT NULL DEFAULT '',
             rating INTEGER CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5)),
             note TEXT,
             finished_at TEXT,
@@ -55,6 +56,10 @@ def init_db():
     if "category" not in book_columns:
         conn.execute(
             "ALTER TABLE books ADD COLUMN category TEXT NOT NULL DEFAULT 'Genel'"
+        )
+    if "summary" not in book_columns:
+        conn.execute(
+            "ALTER TABLE books ADD COLUMN summary TEXT NOT NULL DEFAULT ''"
         )
     conn.commit()
     conn.close()

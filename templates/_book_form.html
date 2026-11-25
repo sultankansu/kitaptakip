@@ -1,11 +1,12 @@
 <div class="card p-3">
-  <form action="{{ url_for('add_book') }}" method="post" class="row g-3">
+  <form accept-charset="UTF-8" action="{{ url_for('add_book') }}" method="post" class="row g-3">
     <div class="col-md-6"><label class="form-label">Kitap adı *</label><input class="form-control" name="title" required></div>
     <div class="col-md-6"><label class="form-label">Yazar</label><input class="form-control" name="author"></div>
     <div class="col-md-4"><label class="form-label">Yayınevi</label><input class="form-control" name="publisher"></div>
     <div class="col-md-2"><label class="form-label">Sayfa *</label><input class="form-control" name="page_count" type="number" min="1" required></div>
     <div class="col-md-3"><label class="form-label">ISBN</label><input class="form-control" name="isbn"></div>
     <div class="col-md-3"><label class="form-label">Yayın yılı</label><input class="form-control" name="publication_year" type="number"></div>
+    <div class="col-12"><label class="form-label">Kitap özeti</label><textarea class="form-control" name="summary" rows="3" maxlength="4000"></textarea></div>
     <div class="col-md-6"><label class="form-label">Kapak URL</label><input class="form-control" name="cover"></div>
     <div class="col-md-3"><label class="form-label">Kategori</label><select class="form-select" name="category">{% for category in categories %}<option value="{{ category }}">{{ category }}</option>{% endfor %}</select></div>
     <div class="col-md-3"><label class="form-label">Raf</label><select class="form-select" name="status"><option value="want">Okunacak</option><option value="reading">Okunuyor</option><option value="finished">Okundu</option></select></div>

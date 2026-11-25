@@ -1,4 +1,5 @@
 import os
+import unicodedata
 from datetime import datetime, timezone
 from functools import wraps
 
@@ -34,6 +35,11 @@ CATEGORIES = (
     "Kişisel Gelişim",
     "Diğer",
 )
+
+
+def turkish_casefold(value):
+    normalized = unicodedata.normalize("NFC", value)
+    return normalized.translate(str.maketrans({"I": "ı", "İ": "i"})).casefold()
 
 
 def login_required(view):
@@ -129,17 +135,23 @@ def logout():
 @login_required
 def library():
     tab = request.args.get("tab", "reading")
-    if tab not in ("want", "reading", "finished"):
+    if tab not in ("all", "want", "reading", "finished"):
         tab = "reading"
     selected_category = request.args.get("category", "")
     if selected_category not in CATEGORIES:
         selected_category = ""
     conn = db.get_db()
-    query = "SELECT * FROM books WHERE status = ?"
-    params = [tab]
+    query = "SELECT * FROM books"
+    conditions = []
+    params = []
+    if tab != "all":
+        conditions.append("status = ?")
+        params.append(tab)
     if selected_category:
-        query += " AND category = ?"
+        conditions.append("category = ?")
         params.append(selected_category)
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
     books = conn.execute(query + " ORDER BY created_at DESC", params).fetchall()
     progress = {}
     estimates = {}
@@ -226,13 +238,21 @@ def add_book():
     if page_count <= 0:
         flash("Sayfa sayısı sıfırdan büyük olmalıdır.", "danger")
         return redirect(url_for("search"))
+    summary = request.form.get("summary", "").strip()
+    if len(summary) > 4000:
+        flash("Kitap özeti 4000 karakterden uzun olamaz.", "danger")
+        return redirect(url_for("search"))
 
     conn = db.get_db()
-    existing = conn.execute(
-        "SELECT id FROM books WHERE title = ? COLLATE NOCASE "
-        "AND ifnull(isbn, '') = ifnull(?, '')",
-        (title, isbn),
-    ).fetchone()
+    existing = next(
+        (
+            book
+            for book in conn.execute("SELECT id, title, isbn FROM books").fetchall()
+            if turkish_casefold(book["title"]) == turkish_casefold(title)
+            and (book["isbn"] or "") == isbn
+        ),
+        None,
+    )
     if existing:
         conn.close()
         flash("Bu kitap zaten ekli.", "warning")
@@ -242,8 +262,8 @@ def add_book():
     local_cover = download_cover(cover) if cover else None
     conn.execute(
         "INSERT INTO books "
-        "(title, author, publisher, cover, url, page_count, isbn, publication_year, status, category, finished_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "(title, author, publisher, cover, url, page_count, isbn, publication_year, status, category, summary, finished_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             title,
             author,
@@ -255,6 +275,7 @@ def add_book():
             publication_year,
             status,
             category,
+            summary,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S") if status == "finished" else None,
         ),
     )
@@ -262,6 +283,34 @@ def add_book():
     conn.close()
     flash("Kitap eklendi.", "success")
     return redirect(url_for("library", tab=status))
+
+
+@app.route("/book/<int:book_id>/summary", methods=["POST"])
+@login_required
+def update_summary(book_id):
+    summary = request.form.get("summary", "").strip()
+    if len(summary) > 4000:
+        flash("Kitap özeti 4000 karakterden uzun olamaz.", "danger")
+        return redirect(url_for("library"))
+    tab = request.form.get("tab", "reading")
+    if tab not in ("all", "want", "reading", "finished"):
+        tab = "reading"
+    selected_category = request.form.get("category_filter", "")
+    if selected_category not in CATEGORIES:
+        selected_category = ""
+    conn = db.get_db()
+    result = conn.execute(
+        "UPDATE books SET summary = ? WHERE id = ?", (summary, book_id)
+    )
+    conn.commit()
+    conn.close()
+    if result.rowcount:
+        flash("Kitap özeti kaydedildi.", "success")
+    else:
+        flash("Kitap bulunamadı.", "warning")
+    return redirect(
+        url_for("library", tab=tab, category=selected_category or None)
+    )
 
 
 @app.route("/book/<int:book_id>/category", methods=["POST"])
@@ -278,7 +327,7 @@ def change_category(book_id):
     conn.commit()
     conn.close()
     tab = request.form.get("tab", "reading")
-    if tab not in ("want", "reading", "finished"):
+    if tab not in ("all", "want", "reading", "finished"):
         tab = "reading"
     selected_category = request.form.get("category_filter", "")
     if selected_category not in CATEGORIES:
@@ -292,7 +341,7 @@ def change_category(book_id):
 @login_required
 def delete_book(book_id):
     tab = request.form.get("tab", "reading")
-    if tab not in ("want", "reading", "finished"):
+    if tab not in ("all", "want", "reading", "finished"):
         tab = "reading"
     selected_category = request.form.get("category_filter", "")
     if selected_category not in CATEGORIES:
@@ -333,7 +382,10 @@ def change_status(book_id):
         )
     conn.commit()
     conn.close()
-    return redirect(url_for("library", tab=status))
+    return_tab = request.form.get("return_tab", "")
+    if return_tab not in ("all", "want", "reading", "finished"):
+        return_tab = status
+    return redirect(url_for("library", tab=return_tab))
 
 
 @app.route("/book/<int:book_id>/progress", methods=["POST"])

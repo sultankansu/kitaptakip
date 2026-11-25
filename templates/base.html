@@ -17,7 +17,7 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="mainNav">
-      <form class="d-flex mx-lg-auto search-nav my-2 my-lg-0" action="{{ url_for('search') }}" method="get">
+      <form accept-charset="UTF-8" class="d-flex mx-lg-auto search-nav my-2 my-lg-0" action="{{ url_for('search') }}" method="get">
         <input class="form-control" name="q" placeholder="Kitap, yazar veya ISBN ara" value="{{ request.args.get('q', '') }}">
       </form>
       <div class="navbar-nav gap-lg-2">

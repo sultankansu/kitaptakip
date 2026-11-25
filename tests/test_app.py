@@ -1,3 +1,4 @@
+from html import unescape
 import os
 import tempfile
 
@@ -121,6 +122,32 @@ def test_book_categories_can_be_assigned_and_filtered(client):
     assert "category=Roman" in response.location
 
 
+def test_all_books_view_shows_covers_from_every_shelf(client):
+    conn = db.get_db()
+    conn.executemany(
+        "INSERT INTO books (title, page_count, status, cover) VALUES (?, 100, ?, ?)",
+        [
+            ("Okunacak kitap", "want", "/static/want-cover.jpg"),
+            ("Okunan kitap", "reading", "/static/reading-cover.jpg"),
+            ("Okunan tamamlandı", "finished", "/static/finished-cover.jpg"),
+        ],
+    )
+    conn.commit()
+    conn.close()
+
+    response = client.get("/?tab=all")
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    for title, cover in [
+        ("Okunacak kitap", "want-cover.jpg"),
+        ("Okunan kitap", "reading-cover.jpg"),
+        ("Okunan tamamlandı", "finished-cover.jpg"),
+    ]:
+        assert title in page
+        assert cover in page
+    assert "Tüm kitaplar" in page
+
+
 def test_delete_book_removes_book_and_reading_logs(client):
     conn = db.get_db()
     cursor = conn.execute(
@@ -148,3 +175,143 @@ def test_delete_book_removes_book_and_reading_logs(client):
         "SELECT COUNT(*) FROM reading_logs WHERE book_id = ?", (book_id,)
     ).fetchone()[0] == 0
     conn.close()
+
+
+def test_book_summary_can_be_added_and_rendered(client):
+    conn = db.get_db()
+    cursor = conn.execute(
+        "INSERT INTO books (title, page_count, status) VALUES ('Özet testi', 120, 'reading')"
+    )
+    book_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    summary = "Bir yolculuk sırasında kahraman kendini ve çevresini yeniden keşfeder."
+    response = client.post(
+        f"/book/{book_id}/summary",
+        data={"summary": summary, "tab": "reading"},
+    )
+    assert response.status_code == 302
+    conn = db.get_db()
+    saved = conn.execute(
+        "SELECT summary FROM books WHERE id = ?", (book_id,)
+    ).fetchone()["summary"]
+    conn.close()
+    assert saved == summary
+
+    response = client.get("/?tab=reading")
+    assert summary in response.get_data(as_text=True)
+
+
+def test_book_summary_rejects_more_than_4000_characters(client):
+    conn = db.get_db()
+    cursor = conn.execute(
+        "INSERT INTO books (title, page_count, status) VALUES ('Uzun özet testi', 120, 'reading')"
+    )
+    book_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    response = client.post(
+        f"/book/{book_id}/summary",
+        data={"summary": "x" * 4001, "tab": "reading"},
+    )
+    assert response.status_code == 302
+    conn = db.get_db()
+    saved = conn.execute(
+        "SELECT summary FROM books WHERE id = ?", (book_id,)
+    ).fetchone()["summary"]
+    conn.close()
+    assert saved == ""
+
+
+def test_turkish_characters_round_trip_through_book_fields(client):
+    fields = {
+        "title": "İstanbul'da Şölen",
+        "author": "Işıl Özçelik",
+        "publisher": "Çağdaş Yayınları",
+        "page_count": "321",
+        "isbn": "TR-İ-Ş-Ğ",
+        "publication_year": "2024",
+        "summary": "Üç öğrenci, İstanbul'da özgürlük ve düşlerini arıyor.",
+        "category": "Roman",
+        "status": "want",
+    }
+    response = client.post("/add", data=fields)
+    assert response.status_code == 302
+
+    conn = db.get_db()
+    book = conn.execute(
+        "SELECT title, author, publisher, isbn, summary, category FROM books"
+    ).fetchone()
+    conn.close()
+    assert tuple(book) == (
+        fields["title"],
+        fields["author"],
+        fields["publisher"],
+        fields["isbn"],
+        fields["summary"],
+        fields["category"],
+    )
+
+    response = client.get("/?tab=want")
+    assert response.mimetype == "text/html"
+    assert response.mimetype_params["charset"] == "utf-8"
+    page = unescape(response.get_data(as_text=True))
+    assert fields["title"] in page
+    assert fields["author"] in page
+    assert fields["summary"] in page
+    assert 'accept-charset="UTF-8"' in page
+
+
+def test_duplicate_book_check_handles_turkish_case(client):
+    client.post(
+        "/add",
+        data={
+            "title": "IŞIK",
+            "author": "Yazar",
+            "page_count": "100",
+            "status": "want",
+            "isbn": "123",
+        },
+    )
+    response = client.post(
+        "/add",
+        data={
+            "title": "ışık",
+            "author": "Yazar",
+            "page_count": "100",
+            "status": "want",
+            "isbn": "123",
+        },
+    )
+    assert response.status_code == 302
+    conn = db.get_db()
+    assert conn.execute("SELECT COUNT(*) FROM books").fetchone()[0] == 1
+    conn.close()
+
+
+def test_turkish_characters_round_trip_in_review_note(client):
+    conn = db.get_db()
+    cursor = conn.execute(
+        "INSERT INTO books (title, page_count, status) VALUES ('Not kitabı', 180, 'finished')"
+    )
+    book_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    note = "Öykü çok etkileyici; özellikle Çağrı'nın seçimi düşündürücü."
+    response = client.post(
+        f"/book/{book_id}/review",
+        data={"rating": "5", "note": note},
+    )
+    assert response.status_code == 302
+    conn = db.get_db()
+    saved = conn.execute(
+        "SELECT note FROM books WHERE id = ?", (book_id,)
+    ).fetchone()["note"]
+    conn.close()
+    assert saved == note
+
+    page = unescape(client.get("/?tab=finished").get_data(as_text=True))
+    assert note in page

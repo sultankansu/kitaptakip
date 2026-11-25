@@ -18,4 +18,6 @@ body { background: var(--background); color: var(--text); min-height: 100vh; }
 .stat-card, .chart-card, .settings-card { padding: 24px; }
 .chart-card canvas { max-height: 360px; }
 .empty-state { padding: 40px; text-align: center; }
+.book-summary summary { color: var(--orange-hover); cursor: pointer; font-size: .9rem; font-weight: 600; }
+.book-summary p { white-space: pre-line; }
 @media (max-width: 576px) { .book-cover { height: 320px; } }

@@ -21,6 +21,8 @@ Okuduğum kitapları, ilerlememi ve yıllık hedefimi takip eden web uygulaması
 ## Özellikler
 - Raflar: Okunacak, Okunuyor, Okundu. İlk sayfa girişinde Okunuyor'a, son sayfada Okundu'ya otomatik geçer ve bitiş tarihi yazılır; elle de değişir.
 - Kitaplar kategoriye atanabilir ve kitaplık kategori butonlarıyla filtrelenebilir.
+- Kitaplara kısa özet eklenebilir, kitap kartında görüntülenip düzenlenebilir.
+- Tüm metin alanları UTF-8 kullanır; Türkçe karakterler arama, kayıt ve gösterimde korunur.
 - Kitaplık kartından kitap ve ona bağlı okuma kayıtları silinebilir.
 - Kitap kartı: kapak, ad, yazar, ilerleme çubuğu, "Kitapyurdu'nda gör" linki.
 - "Bugün okudum": kalınan sayfa girilir. Son kayıt silinebilir.
@@ -48,6 +50,7 @@ Okuduğum kitapları, ilerlememi ve yıllık hedefimi takip eden web uygulaması
 - Navbar: solda "📚 Kitap Takip", ortada arama kutusu, sağda Kitaplık · İstatistik · Ayarlar · Çıkış.
 - Arama sonuçları: kart ızgarası; her kartta kapak, ad, yazar ve Okunacak / Okunuyor / Okundu butonları.
 - Kitaplık: raf sekmeleri, kart ızgarası (masaüstü 4, tablet 2, mobil 1 sütun).
+- Kitaplıkta tüm raflardaki kitap kapaklarını birlikte gösteren "Tüm kitaplar" görünümü.
 - Login: ortada tek kart, turuncu "Giriş" butonu.
 
 ## Docker (aynen oluşturulur)
